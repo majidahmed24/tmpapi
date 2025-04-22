@@ -60,3 +60,29 @@ exports.login = async (req, res) => {
   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
   res.json({ token, user });
 };
+
+
+exports.loginWithOtp = async (req, res) => {
+  const { phoneNumber, otp } = req.body;
+
+  if (otp !== '123456') {
+    return res.status(401).json({ msg: 'Invalid OTP' });
+  }
+
+  let user = await User.findOne({ phoneNumber });
+
+  if (!user) {
+    // Create dummy user
+    user = new User({
+      name: 'Guest',
+      email: `${phoneNumber}@dummy.com`,
+      phoneNumber,
+      age: 0,
+      password: '' // optional or skip setting it
+    });
+    await user.save();
+    return res.status(201).json({ user, isNew: true });
+  }
+
+  res.json({ user, isNew: false });
+};
